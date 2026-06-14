@@ -1,58 +1,57 @@
+# E-Commerce Infrastructure Pipeline (AWS CDK)
 
-# Welcome to your CDK Python project!
+This project contains the AWS CDK application responsible for deploying and managing the CI/CD infrastructure for the E-Commerce backend platform.
 
-This is a blank project for CDK development with Python.
+## Overview
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+The solution provisions an AWS CodePipeline that automatically monitors GitHub repositories for source code changes and deploys infrastructure updates through AWS CloudFormation.
 
-This project is set up like a standard Python project.  The initialization
-process also creates a virtualenv within this project, stored under the `.venv`
-directory.  To create the virtualenv it assumes that there is a `python3`
-(or `python` for Windows) executable in your path with access to the `venv`
-package. If for any reason the automatic creation of the virtualenv fails,
-you can create the virtualenv manually.
+The pipeline orchestrates the deployment of multiple infrastructure stacks including:
 
-To manually create a virtualenv on MacOS and Linux:
+* **VPC Stack** – Networking, subnets, routing, and security configuration.
+* **PostgreSQL Stack** – Amazon Aurora PostgreSQL database resources.
+* **DocumentDB Stack** – Amazon DocumentDB cluster and related resources.
+* **ECS Fargate Stack** – Containerized application services running on Amazon ECS Fargate.
 
-```
-$ python3 -m venv .venv
-```
+## Pipeline Features
 
-After the init process completes and the virtualenv is created, you can use the following
-step to activate your virtualenv.
+* GitHub source integration with automatic pipeline execution on push events.
+* Independent CloudFormation deployment actions for each infrastructure stack.
+* Environment-specific deployments:
 
-```
-$ source .venv/bin/activate
-```
+  * **Development**
+  * **Production**
+* Manual approval stage required before production deployments.
+* Automated CloudFormation stack creation and updates.
+* Build and deployment notifications through Amazon SNS.
+* Email subscriptions for stakeholders to receive:
 
-If you are a Windows platform, you would activate the virtualenv like this:
+  * Build status notifications
+  * Deployment notifications
+  * Production approval requests
+  * Approval and deployment results
 
-```
-% .venv\Scripts\activate.bat
-```
+## Deployment Flow
 
-Once the virtualenv is activated, you can install the required dependencies.
+1. Developer pushes changes to GitHub.
+2. CodePipeline detects the update.
+3. Pipeline validates and processes CloudFormation templates.
+4. Individual CloudFormation deployment actions update the corresponding AWS stacks.
+5. For production deployments, a manual approval stage must be completed before deployment continues.
+6. Notifications are sent throughout the deployment lifecycle to subscribed recipients.
 
-```
-$ pip install -r requirements.txt
-```
+## Technologies
 
-At this point you can now synthesize the CloudFormation template for this code.
+* AWS CDK (Python)
+* AWS CodePipeline
+* AWS CodeBuild
+* AWS CloudFormation
+* Amazon ECS Fargate
+* Amazon Aurora PostgreSQL
+* Amazon DocumentDB
+* Amazon SNS
+* GitHub Integration
 
-```
-$ cdk synth
-```
+## Goal
 
-To add additional dependencies, for example other CDK libraries, just add
-them to your `requirements.txt` file and rerun the `python -m pip install -r requirements.txt`
-command.
-
-## Useful commands
-
- * `cdk ls`          list all stacks in the app
- * `cdk synth`       emits the synthesized CloudFormation template
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk docs`        open CDK documentation
-
-Enjoy!
+Provide a fully automated, repeatable, and secure deployment process for the E-Commerce platform infrastructure while maintaining separation between development and production environments and ensuring visibility through notifications and approval workflows.
