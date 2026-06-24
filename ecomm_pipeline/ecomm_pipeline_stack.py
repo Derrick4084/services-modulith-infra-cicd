@@ -33,28 +33,10 @@ class EcommPipelineStack(Stack):
         owner = config["github"]["owner"]
         repo = config["github"]["repo"]
         repo_conn = config["github"]["connection_arn"]
-        # dev_branch = config["development_branch"]
-        # prod_branch = config["production_branch"]
         bucketname = config["bucketname"]
-        # pipelinename = config["pipelinename"]
-        # stage = config["stage"]["dev"]
         sns_topic = config["sns"]["topic"]
         sns_emails = config["sns"]["emails"]
 
-        # env_config = {
-        #     "dev": {
-        #         "stage": "dev",
-        #         "branch": config["development_branch"],
-        #         "pipeline_name": f"{config['pipelinename']}-dev",
-        #         "approval_required": False,
-        #     },
-        #     "prod": {
-        #         "stage": "prod",
-        #         "branch": config["production_branch"],
-        #         "pipeline_name": f"{config['pipelinename']}-prod",
-        #         "approval_required": True,
-        #     }
-        # }[environment]
 
         if development_pipeline:
             env_config = {
@@ -74,7 +56,6 @@ class EcommPipelineStack(Stack):
                 "stack_name": "prod-EcsFargateStack",
                 "auto_destroy": False
             }
-
 
 
         action_role = iam_.Role(
@@ -117,18 +98,10 @@ class EcommPipelineStack(Stack):
         topic = create_topic(self, sns_topic, action_role)
 
         
-
         # Pipeline build output artifacts locations
         build_output = codepipeline.Artifact(artifact_name="build")
         source = codepipeline.Artifact(artifact_name="source")
 
-
-        fargate_template_output = codepipeline.Artifact(artifact_name="fargate-template")
-        postgres_template_output = codepipeline.Artifact(artifact_name="postgres-template")
-        documentdb_template_output = codepipeline.Artifact(artifact_name="documentdb-template")
-        vpc_template_output = codepipeline.Artifact(artifact_name="vpc-template")
-
-        
 
         # Pipeline arctifact bucket
         pipeline_artifact_bucket = s3.Bucket(self, "PipelineBucket",
@@ -159,54 +132,11 @@ class EcommPipelineStack(Stack):
             name="CDK_Build",
             role=action_role,
             commands=["cdk synth"],
-            dir=".",
+            dir="cdk.out",
             files=["**/*"],
             kms_key=kms_key
         )
 
-
-        # Fargate build project
-        fargate_template = get_build_spec(
-            self,
-            name="EcsFargateStackSynth",
-            role=action_role,
-            commands=["cdk synth EcsFargateStack -o dist"],
-            dir="dist",
-            files=["EcsFargateStack.template.json"],
-            kms_key=kms_key
-        )
-        # Postgres build project
-        postgres_template = get_build_spec(
-            self,
-            name="PostgresDBStackSynth",
-            role=action_role,
-            commands=["cdk synth PostgresDBStack -o dist"],
-            dir="dist",
-            files=["PostgresDBStack.template.json"],
-            kms_key=kms_key
-        )
-        # DocumentDB build project
-        documentdb_template = get_build_spec(
-            self,
-            name="DocumentDBStackSynth",
-            role=action_role,
-            commands=["cdk synth DocumentDBStack -o dist"],
-            dir="dist",
-            files=["DocumentDBStack.template.json"],
-            kms_key=kms_key
-        )
-        # VPC build project
-        vpc_template = get_build_spec(
-            self,
-            name="VPCStackSynth",
-            role=action_role,
-            commands=["cdk synth VpcStack -o dist"],
-            dir="dist",
-            files=["VpcStack.template.json"],
-            kms_key=kms_key
-        )
-
-    
 
         # Cdk codebuild actions
         build_cdk_action = get_codebuild_action(
@@ -217,43 +147,8 @@ class EcommPipelineStack(Stack):
             source=source,
             run_order=2
         )
-        # Fargate codebuild action
-        fargate_template_action = get_codebuild_action(
-            name="Building_Fargate_Template",
-            role=action_role,
-            project=fargate_template,
-            artifact=fargate_template_output,
-            source=build_output,
-            run_order=3
-        )
-        # Postgres codebuild action
-        postgres_template_action = get_codebuild_action(
-            name="Building_Postgres_Template",
-            role=action_role,
-            project=postgres_template,
-            artifact=postgres_template_output,
-            source=build_output,
-            run_order=3
-        )
-        # DocumentDB codebuild action
-        documentdb_template_action = get_codebuild_action(
-            name="Building_DocumentDB_Template",
-            role=action_role,
-            project=documentdb_template,
-            artifact=documentdb_template_output,
-            source=build_output,
-            run_order=3
-        )
-        # VPC codebuild action
-        vpc_template_action = get_codebuild_action(
-            name="Building_VPC_Template",
-            role=action_role,
-            project=vpc_template,
-            artifact=vpc_template_output,
-            source=build_output,
-            run_order=3
-        )
-
+        
+        
         # Approval codebuild action
         approval_action = codepipeline_actions.ManualApprovalAction(
             action_name="Approve",
@@ -261,7 +156,7 @@ class EcommPipelineStack(Stack):
             role=action_role,
             notification_topic=topic,
             notify_emails=sns_emails,
-            run_order=4
+            run_order=3
         )
 
 
@@ -270,23 +165,31 @@ class EcommPipelineStack(Stack):
             name="DeployVPCStack",
             role=action_role,
             stack_name="VpcStack",
-            template_path=vpc_template_output.at_path("VpcStack.template.json"),
-            run_order=5
+            template_path=build_output.at_path("VpcStack.template.json"),
+            run_order=4
         )
         # PostgresDBStack deployment actions
         postgres_stack_action = get_stack_action(
             name="DeployPostgresStack",
             role=action_role,
             stack_name="PostgresDBStack",
-            template_path=postgres_template_output.at_path("PostgresDBStack.template.json"),
-            run_order=6
+            template_path=build_output.at_path("PostgresDBStack.template.json"),
+            run_order=5
         )
         # DocumentDBStack deployment actions
         documentdb_stack_action = get_stack_action(
             name="DeployDocumentDBStack",
             role=action_role,
             stack_name="DocumentDBStack",
-            template_path=documentdb_template_output.at_path("DocumentDBStack.template.json"),
+            template_path=build_output.at_path("DocumentDBStack.template.json"),
+            run_order=5
+        )
+        # PostgresConfigStack deployment actions
+        postgres_config_stack_action = get_stack_action(
+            name="DeployPostgresConfigStack",
+            role=action_role,
+            stack_name="PostgresConfigStack",
+            template_path=build_output.at_path("PostgresConfigStack.template.json"),
             run_order=6
         )
         # FargateStack deployment actions
@@ -294,8 +197,17 @@ class EcommPipelineStack(Stack):
             name="DeployFargateStack",
             role=action_role,
             stack_name="EcsFargateStack",
-            template_path=fargate_template_output.at_path("EcsFargateStack.template.json"),
+            template_path=build_output.at_path("EcsFargateStack.template.json"),
             run_order=7
+        )
+
+        # FargateStack deployment actions
+        dev_tools_stack_action = get_stack_action(
+            name="DeployDevToolsStack",
+            role=action_role,
+            stack_name="DevToolsStack",
+            template_path=build_output.at_path("DevToolStack.template.json"),
+            run_order=8
         )
 
 
@@ -313,7 +225,7 @@ class EcommPipelineStack(Stack):
         )
         pipeline.add_stage(
             stage_name="Build",
-            actions=[build_cdk_action, fargate_template_action, postgres_template_action, documentdb_template_action, vpc_template_action]
+            actions=[build_cdk_action]
         )
         if env_config["require_approval"]:
             pipeline.add_stage(
@@ -322,8 +234,20 @@ class EcommPipelineStack(Stack):
         )
         pipeline.add_stage(
             stage_name="Deploy",
-            actions=[vpc_stack_action, postgres_stack_action, documentdb_stack_action, fargate_stack_action]
+            actions=[
+                vpc_stack_action,
+                postgres_stack_action,  
+                postgres_config_stack_action,   
+                documentdb_stack_action, 
+                fargate_stack_action
+            ]
         )
+
+        if env_config["stage"] == "dev":
+            pipeline.add_stage(
+                stage_name="DeployDevTools",
+                actions=[dev_tools_stack_action]
+            )
 
         pipeline.add_to_role_policy(iam_.PolicyStatement(
             effect=iam_.Effect.ALLOW,
@@ -331,14 +255,9 @@ class EcommPipelineStack(Stack):
             actions=["sts:AssumeRole"]
         ))
 
-
         # Create the notifications
         build_notices = get_notification(self, "Build", build_cdk, topic)
-        fargate_template_notices = get_notification(self, "FargateTemplate", fargate_template, topic)
-        postgres_template_notices = get_notification(self, "PostgresTemplate", postgres_template, topic)
-        documentdb_template_notices = get_notification(self, "DocumentDBTemplate", documentdb_template, topic)
-        vpc_template_notices = get_notification(self, "VpcTemplate", vpc_template, topic)
-
+        
 
         # Create SNS email subscriptions if emails are provided
         if sns_emails:
