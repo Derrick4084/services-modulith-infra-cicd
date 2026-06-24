@@ -75,7 +75,7 @@ class EcommPipelineStack(Stack):
                 "codestar-connections:UseConnection",
             ],
             resources=[
-                f"need to be replaced with the actual connection ARN"
+                f"arn:aws:codeconnections:{Aws.REGION}:{Aws.ACCOUNT_ID}:connection/2ab05b27-1bfc-4e70-be99-6160eaaa529a"
             ]
         ))
         action_role.add_to_policy(iam_.PolicyStatement(
