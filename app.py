@@ -10,12 +10,12 @@ from ecomm_pipeline.ecomm_pipeline_stack import EcommPipelineStack
 
 
 config = {
-    "development_branch": "develop",
+    "development_branch": "dev",
     "production_branch": "main",
     "github": {
        "connection_arn": f"arn:aws:codeconnections:{Aws.REGION}:{Aws.ACCOUNT_ID}:connection/0bfbfa62-024e-4b11-a838-f1035051dad0",
        "owner": "Derrick4084",
-       "repo": "aws-kubernetes"      
+       "repo": "services-modulith-infra-cicd"      
     },
     "bucketname": f"codepipeline-assets-{Aws.ACCOUNT_ID}",
     "pipelinename": "EcommPipeline",
@@ -46,8 +46,6 @@ EcommPipelineStack(app, "ProductionPipeline",
         "region": Aws.REGION,
     }
 )
-
-
 
 
 app.synth()

@@ -164,7 +164,7 @@ class EcommPipelineStack(Stack):
         vpc_stack_action = get_stack_action(
             name="DeployVPCStack",
             role=action_role,
-            stack_name="VpcStack",
+            stack_name=f"{env_config['stage']}-VpcStack",
             template_path=build_output.at_path("VpcStack.template.json"),
             run_order=4
         )
@@ -172,7 +172,7 @@ class EcommPipelineStack(Stack):
         postgres_stack_action = get_stack_action(
             name="DeployPostgresStack",
             role=action_role,
-            stack_name="PostgresDBStack",
+            stack_name=f"{env_config['stage']}-PostgresDBStack",
             template_path=build_output.at_path("PostgresDBStack.template.json"),
             run_order=5
         )
@@ -180,7 +180,7 @@ class EcommPipelineStack(Stack):
         documentdb_stack_action = get_stack_action(
             name="DeployDocumentDBStack",
             role=action_role,
-            stack_name="DocumentDBStack",
+            stack_name=f"{env_config['stage']}-DocumentDBStack",
             template_path=build_output.at_path("DocumentDBStack.template.json"),
             run_order=5
         )
@@ -188,7 +188,7 @@ class EcommPipelineStack(Stack):
         postgres_config_stack_action = get_stack_action(
             name="DeployPostgresConfigStack",
             role=action_role,
-            stack_name="PostgresConfigStack",
+            stack_name=f"{env_config['stage']}-PostgresConfigStack",
             template_path=build_output.at_path("PostgresConfigStack.template.json"),
             run_order=6
         )
@@ -196,7 +196,7 @@ class EcommPipelineStack(Stack):
         fargate_stack_action = get_stack_action(
             name="DeployFargateStack",
             role=action_role,
-            stack_name="EcsFargateStack",
+            stack_name=f"{env_config['stage']}-EcsFargateStack",
             template_path=build_output.at_path("EcsFargateStack.template.json"),
             run_order=7
         )
@@ -209,7 +209,6 @@ class EcommPipelineStack(Stack):
             template_path=build_output.at_path("DevToolStack.template.json"),
             run_order=8
         )
-
 
         # Create pipeline     
         pipeline = codepipeline.Pipeline(self, "Pipeline",
