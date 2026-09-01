@@ -13,16 +13,17 @@ config = {
     "development_branch": "dev",
     "production_branch": "main",
     "github": {
-       "connection_arn": f"arn:aws:codeconnections:{Aws.REGION}:{Aws.ACCOUNT_ID}:connection/0bfbfa62-024e-4b11-a838-f1035051dad0",
+       "connection_arn": f"arn:aws:codeconnections:{Aws.REGION}:{Aws.ACCOUNT_ID}:connection/2ab05b27-1bfc-4e70-be99-6160eaaa529a",
        "owner": "Derrick4084",
-       "repo": "services-modulith-infra-cicd"      
+       "repo": "services-modulith-infra-cdk",
+       "domain": "token.actions.githubusercontent.com"     
     },
     "bucketname": f"codepipeline-assets-{Aws.ACCOUNT_ID}",
     "pipelinename": "EcommPipeline",
     "sns":{
         "topic": "ecomm-pipeline",
         "emails": ["admin@example.com"],
-    },   
+    }  
 }
 
 
@@ -30,7 +31,8 @@ config = {
 app = cdk.App()
 
 EcommPipelineStack(app, "DevelopmentPipeline",
-    development_pipeline=True, 
+    development_pipeline=True,
+    environment="dev",
     config=config,
     env={
         "account": Aws.ACCOUNT_ID,
@@ -39,7 +41,8 @@ EcommPipelineStack(app, "DevelopmentPipeline",
 )
 
 EcommPipelineStack(app, "ProductionPipeline",
-    development_pipeline=False, 
+    development_pipeline=False,
+    environment="prod",
     config=config,
     env={
         "account": Aws.ACCOUNT_ID,

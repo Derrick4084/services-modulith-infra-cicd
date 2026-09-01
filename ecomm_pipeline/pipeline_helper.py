@@ -17,7 +17,7 @@ from constructs import Construct
 from typing import List
 import json
 
-def get_build_spec(self, name: str, role: iam_.Role, commands: List[str], dir: str, files: List[str], kms_key: kms.Key):
+def get_build_spec(self, name: str, role: iam_.Role, commands: List[str], dir: str, files: List[str], kms_key: kms.Key, env: str = None):
             return codebuild.PipelineProject(
                 self, name,
                 environment=codebuild.BuildEnvironment(
@@ -29,6 +29,11 @@ def get_build_spec(self, name: str, role: iam_.Role, commands: List[str], dir: s
                 build_spec=codebuild.BuildSpec.from_object(
                     {
                         "version": "0.2",
+                        "env": {
+                            "variables": {
+                            "ENVIRONMENT": env
+                            }
+                        },
                         "phases": {
                             "install": {
                                 "commands":["npm install -g aws-cdk@latest",
@@ -66,7 +71,7 @@ def get_codebuild_action(
             )
 
 
-def get_stack_action(name: str, role: iam_.Role, stack_name: str, template_path: codepipeline.ArtifactPath, run_order: int = 4):
+def get_deploy_action(name: str, role: iam_.Role, stack_name: str, template_path: codepipeline.ArtifactPath, run_order: int = 4):
     return codepipeline_actions.CloudFormationCreateUpdateStackAction(
         action_name=name,
         stack_name=stack_name,
